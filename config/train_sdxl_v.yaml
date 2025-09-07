@@ -63,9 +63,13 @@ scheduler:
 sampling:
   enabled: false
   use_wandb: true
+  sample_on_start: false
   seed: 1234
-  height: 1280
-  width: 768
+  height: 1216
+  width: 832
+  steps_sampling: 28
+  guidance_scale: 5
+  negative_prompt: "lowres, low quality, text, error, extra digit, cropped"
   every_n_steps: -1
   every_n_epochs: 1
   save_dir: "samples"

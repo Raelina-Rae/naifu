@@ -182,6 +182,9 @@ class StableDiffusionModel(pl.LightningModule):
         prompts = list(config.prompts)
         images = []
         size = (config.get("height", 1024), config.get("width", 1024))
+        steps_sampling = int(config.get("steps_sampling", 25))
+        guidance_scale = float(config.get("guidance_scale", 6.5))
+        negative_prompt = config.get("negative_prompt", "lowres, low quality, text, error, extra digit, cropped")
         self.model.eval()
 
         rank = 0
@@ -192,7 +195,14 @@ class StableDiffusionModel(pl.LightningModule):
         for idx, prompt in tqdm(
             enumerate(local_prompts), desc=f"Sampling (Process {rank})", total=len(local_prompts), leave=False
         ):
-            image = self.sample(prompt, size=size, generator=generator)
+            image = self.sample(
+                prompt,
+                negative_prompt=negative_prompt,
+                generator=generator,
+                size=size,
+                steps=steps_sampling,
+                guidance_scale=guidance_scale,
+            )
             image[0].save(
                 Path(config.save_dir)
                 / f"sample_e{current_epoch}_s{global_step}_p{rank}_{idx}.png"
@@ -225,12 +235,22 @@ class StableDiffusionModel(pl.LightningModule):
         prompts = list(config.prompts)
         images = []
         size = (config.get("height", 1024), config.get("width", 1024))
+        steps_sampling = int(config.get("steps_sampling", 25))
+        guidance_scale = float(config.get("guidance_scale", 6.5))
+        negative_prompt = config.get("negative_prompt", "lowres, low quality, text, error, extra digit, cropped")
         self.model.eval()
 
         for idx, prompt in tqdm(
             enumerate(prompts), desc="Sampling", total=len(prompts), leave=False
         ):
-            image = self.sample(prompt, size=size, generator=generator)
+            image = self.sample(
+                prompt,
+                negative_prompt=negative_prompt,
+                generator=generator,
+                size=size,
+                steps=steps_sampling,
+                guidance_scale=guidance_scale,
+            )
             image[0].save(
                 Path(config.save_dir)
                 / f"sample_e{current_epoch}_s{global_step}_{idx}.png"
