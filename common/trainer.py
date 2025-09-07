@@ -119,7 +119,12 @@ class Trainer:
             self.optimizer.eval()
 
         postfix = f"e{self.current_epoch}_s{self.global_step}"
-        model_path = os.path.join(ckpt_dir, f"checkpoint-{postfix}")
+        base_name = cfg.get("checkpoint_name", None)
+        if base_name and isinstance(base_name, str) and len(base_name) > 0:
+            filename = f"{base_name}_{postfix}"
+        else:
+            filename = f"checkpoint-{postfix}"
+        model_path = os.path.join(ckpt_dir, filename)
         save_weights_only = cfg.get("save_weights_only", False)
         
         logger.info("Saving model checkpoint")

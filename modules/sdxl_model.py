@@ -381,6 +381,24 @@ class StableDiffusionModel(pl.LightningModule):
                 key.replace("module.", ""): value for key, value in state_dict.items()
             }
 
+        # cast precision before saving if requested
+        save_precision = str(cfg.get("save_precision", "fp32")).lower()
+        if save_precision in ["fp16", "float16", "16"]:
+            target_dtype = torch.float16
+        elif save_precision in ["bf16", "bfloat16"]:
+            target_dtype = torch.bfloat16
+        else:
+            target_dtype = torch.float32
+
+        if target_dtype is not None:
+            new_state_dict = {}
+            for k, v in state_dict.items():
+                if isinstance(v, torch.Tensor) and v.is_floating_point():
+                    new_state_dict[k] = v.to(dtype=target_dtype)
+                else:
+                    new_state_dict[k] = v
+            state_dict = new_state_dict
+
         if cfg.get("save_format") == "safetensors":
             model_path += ".safetensors"
             save_file(state_dict, model_path, metadata=metadata)

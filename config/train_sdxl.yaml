@@ -12,6 +12,8 @@ trainer:
 
   save_format: safetensors
   checkpoint_dir: checkpoint
+  checkpoint_name: ""
+  save_precision: fp16
   checkpoint_freq: 1
   checkpoint_steps: -1
   save_weights_only: true
