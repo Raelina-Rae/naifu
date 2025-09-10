@@ -17,7 +17,7 @@ from common.logging import logger
 
 from diffusers import DDPMScheduler
 from lightning.pytorch.utilities import rank_zero_only
-from safetensors.torch import save_file
+from safetensors.torch import save_file, load_file
 from modules.config_sdxl_base import model_config
 
 # define the LightningModule
@@ -418,6 +418,29 @@ class StableDiffusionModel(pl.LightningModule):
                 else:
                     new_state_dict[k] = v
             state_dict = new_state_dict
+
+        # Optionally add vpred/ztsnr keys when both flags are enabled
+        advanced = self.config.get("advanced", {})
+        if advanced.get("v_parameterization", False) and advanced.get("zero_terminal_snr", False):
+            try:
+                patch_path = advanced.get("vpred_patch_path", "models/vpred/vpred.safetensors")
+                patch_path = str(patch_path)
+                if Path(patch_path).exists():
+                    patch_sd = load_file(patch_path)
+                    added = 0
+                    for k, v in patch_sd.items():
+                        if k not in state_dict:
+                            if isinstance(v, torch.Tensor) and v.is_floating_point():
+                                state_dict[k] = v.to(dtype=target_dtype)
+                            else:
+                                state_dict[k] = v
+                            added += 1
+                    if added > 0:
+                        logger.info(f"Added vpred-related keys")
+                else:
+                    logger.info(f"vpred patch file not found at {patch_path}; skipping vpred key injection")
+            except Exception as e:
+                logger.warning(f"Failed to add vpred keys: {e}")
 
         if cfg.get("save_format") == "safetensors":
             model_path += ".safetensors"
