@@ -144,7 +144,11 @@ class StableDiffusionModel(pl.LightningModule):
             images.extend(image)
 
         if config.use_wandb and logger and "CSVLogger" != logger.__class__.__name__:
-            logger.log_image(key="samples", images=images, caption=prompts, step=global_step)
+            # Log each sample individually with separate step numbers
+            for idx, (image, prompt) in enumerate(zip(images, prompts)):
+                logger.log_image(
+                    key=f"samples/sample_{idx}", images=[image], caption=[prompt], step=global_step
+                )
 
     @torch.inference_mode()
     def sample(

@@ -224,9 +224,11 @@ class StableDiffusionModel(pl.LightningModule):
                 all_images.append(imgs)
 
             if config.use_wandb and logger and "CSVLogger" != logger.__class__.__name__:
-                logger.log_image(
-                    key="samples", images=all_images, caption=all_prompts, step=global_step
-                )
+                # Log each sample individually with separate step numbers
+                for idx, (image, prompt) in enumerate(zip(all_images, all_prompts)):
+                    logger.log_image(
+                        key=f"samples/sample_{idx}", images=[image], caption=[prompt], step=global_step
+                    )
     
     @rank_zero_only
     def generate_samples_seq(self, logger, current_epoch, global_step):
@@ -259,9 +261,11 @@ class StableDiffusionModel(pl.LightningModule):
 
         self.model.train()
         if config.use_wandb and logger and "CSVLogger" != logger.__class__.__name__:
-            logger.log_image(
-                key="samples", images=images, caption=prompts, step=global_step
-            )
+            # Log each sample individually with separate step numbers
+            for idx, (image, prompt) in enumerate(zip(images, prompts)):
+                logger.log_image(
+                    key=f"samples/sample_{idx}", images=[image], caption=[prompt], step=global_step
+                )
 
     @torch.inference_mode()
     def sample(
